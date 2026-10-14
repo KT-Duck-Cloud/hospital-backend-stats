@@ -55,7 +55,9 @@ FAKE_URLS = {name: f"http://127.0.0.1:{srv.server_address[1]}" for name, srv in 
 FAKE_URLS["down"] = f"http://127.0.0.1:{_closed_port()}"
 
 _db = Path(tempfile.mkdtemp()) / "stats-test.db"
-os.environ["DATABASE_URL"] = f"sqlite:///{_db}"
+os.environ["DB_URL"] = f"sqlite:///{_db}"
+for _name in ("DB_USERNAME", "DB_PASSWORD"):  # SQLite 는 계정을 쓰지 않는다 (밖의 값이 섞이지 않게)
+    os.environ.pop(_name, None)
 os.environ["JWT_SECRET"] = secrets.token_urlsafe(48)
 os.environ["SERVICE_URLS"] = ",".join(f"{k}={v}" for k, v in FAKE_URLS.items())
 os.environ["SITE_NAME"] = "hospital"

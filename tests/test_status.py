@@ -56,7 +56,7 @@ def test_no_connection_info_in_status_or_metrics(client, headers):
     status = client.get(URL, headers=headers["DIRECTOR"]).text
     client.get("/readyz")
     metrics = client.get("/metrics").text
-    secrets_to_hide = [os.environ["DATABASE_URL"], os.environ["JWT_SECRET"], "sqlite", "127.0.0.1"]
+    secrets_to_hide = [os.environ["DB_URL"], os.environ["JWT_SECRET"], "sqlite", "127.0.0.1"]
     secrets_to_hide += list(FAKE_URLS.values()) + [u.split("//")[1] for u in FAKE_URLS.values()]
     for text in (status, metrics):
         for hidden in secrets_to_hide:
