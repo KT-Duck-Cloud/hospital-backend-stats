@@ -28,5 +28,5 @@ reservations = Table(
     Column("doctor_id", Integer, nullable=True),
     Column("reserved_at", DateTime, nullable=False),          # UTC
     Column("status", String(10), nullable=False),             # BOOKED / CANCELED
-    Column("checkin_status", String(20), nullable=False),     # NOT_CHECKED_IN / CHECKED_IN
+    Column("checkin_status", String(20), nullable=False),     # NOT_CHECKED_IN / CHECKED_IN / IN_TREATMENT / COMPLETED
 )

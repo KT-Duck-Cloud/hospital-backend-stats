@@ -4,9 +4,9 @@
 - total          : 예약 전체 (취소 포함)
 - booked         : status=BOOKED
 - canceled       : status=CANCELED
-- checked_in     : BOOKED 이면서 접수됨 (CHECKED_IN)
+- checked_in     : BOOKED 이면서 접수됨 (CHECKED_IN·IN_TREATMENT·COMPLETED 모두. 진료대기+진료중+진료완료)
 - not_checked_in : BOOKED 이면서 아직 접수 안 됨
-- waiting (S4)   : 접수된 예약 수 = 대기열 인원 (진료 완료 상태가 아직 없어서 접수 = 대기로 본다)
+- waiting (S4)   : 진료대기 인원 = BOOKED 이면서 CHECKED_IN 인 예약 (진료중·진료완료는 뺀다)
 역할: DEPT_HEAD 는 자기 부서만 (다른 부서를 요청하면 403), DIRECTOR 는 전체.
 """
 import datetime as dt
@@ -95,7 +95,7 @@ class DoctorReport(BaseModel):
 
 
 class HospitalDepartment(DepartmentCounts):
-    waiting: int
+    waiting: int      # 진료대기 (CHECKED_IN 만. 진료중·진료완료는 뺀다)
 
 
 class HospitalReport(BaseModel):
@@ -113,7 +113,8 @@ def _count_columns():
         func.count(R.c.id).label("total"),
         func.count(case((booked, R.c.id))).label("booked"),
         func.count(case((R.c.status == "CANCELED", R.c.id))).label("canceled"),
-        func.count(case((and_(booked, R.c.checkin_status == "CHECKED_IN"), R.c.id))).label("checked_in"),
+        func.count(case((and_(booked, R.c.checkin_status != "NOT_CHECKED_IN"), R.c.id))).label("checked_in"),
+        func.count(case((and_(booked, R.c.checkin_status == "CHECKED_IN"), R.c.id))).label("waiting"),
         func.count(case((and_(booked, R.c.checkin_status == "NOT_CHECKED_IN"), R.c.id))).label("not_checked_in"),
     )
 
@@ -202,7 +203,7 @@ def hospital_stats(filters: Annotated[DayFilter, Query()], db: Session = Depends
         .group_by(departments.c.id, departments.c.code, departments.c.name)
         .order_by(departments.c.id)
     )
-    rows = [HospitalDepartment(department_id=r.id, code=r.code, name=r.name, waiting=int(r.checked_in or 0),
+    rows = [HospitalDepartment(department_id=r.id, code=r.code, name=r.name, waiting=int(r.waiting or 0),
                                **_counts(r)) for r in db.execute(stmt)]
     totals = Counts(**{k: sum(getattr(d, k) for d in rows)
                        for k in ("total", "booked", "canceled", "checked_in", "not_checked_in")})

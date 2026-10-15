@@ -84,6 +84,22 @@ def test_dept_head_sees_only_own_department(client, headers, data):
 
 # ---------- S3 ----------
 
+def test_treatment_states_count_as_checked_in_but_not_waiting(client, headers, data):
+    """진료중·진료완료는 '접수됨'에는 들어가고 '대기(waiting)'에서는 빠진다. 접수 전은 그대로."""
+    from app.tables import reservations
+    from shared.db import engine
+
+    with engine.begin() as conn:
+        conn.execute(insert(reservations), [
+            {"department_id": 3, "doctor_id": None, "reserved_at": datetime(2026, 10, 14, 0, 0),
+             "status": "BOOKED", "checkin_status": s}
+            for s in ("CHECKED_IN", "IN_TREATMENT", "COMPLETED", "NOT_CHECKED_IN")])
+    body = client.get("/api/v1/stats/hospital", params={"date": DAY}, headers=headers["DIRECTOR"]).json()
+    adm = next(d for d in body["departments"] if d["code"] == "ADM")
+    assert counts(adm) == {"total": 4, "booked": 4, "canceled": 0, "checked_in": 3, "not_checked_in": 1}
+    assert adm["waiting"] == 1
+
+
 def test_doctor_counts(client, headers, data):
     body = client.get("/api/v1/stats/doctors", params={"date_from": DAY, "date_to": DAY},
                       headers=headers["DIRECTOR"]).json()
