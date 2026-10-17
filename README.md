@@ -23,7 +23,7 @@ python -m venv .venv
 
 ```powershell
 docker build --build-arg APP_VERSION=$(git rev-parse --short HEAD) -t hospital-backend-stats:dev .
-docker run --rm -p 8002:8000 -e DATABASE_URL=... -e JWT_SECRET=... hospital-backend-stats:dev
+docker run --rm -p 8002:8000 -e DB_URL=... -e DB_USERNAME=... -e DB_PASSWORD=... -e JWT_SECRET=... hospital-backend-stats:dev
 ```
 
 DB 와 다른 서비스를 함께 띄우는 로컬 개발 환경은 `hospital-gitops` 의 `docker-compose.yml` 을 쓴다.
@@ -34,7 +34,9 @@ DB 와 다른 서비스를 함께 띄우는 로컬 개발 환경은 `hospital-gi
 
 | 이름 | 필수 | 설명 |
 |---|---|---|
-| `DATABASE_URL` | 필수 | `mysql+pymysql://사용자:비밀번호@호스트:3306/hospital?charset=utf8mb4` |
+| `DB_URL` | 필수 | 계정 없는 DB 주소 (예: `mysql://db-service:3306/hospital`) |
+| `DB_USERNAME` | 필수 | DB 계정 이름 (이 서비스는 `app_readonly`) |
+| `DB_PASSWORD` | 필수 | DB 비밀번호 (운영은 Kubernetes Secret 으로 주입) |
 | `JWT_SECRET` | 필수 | JWT 서명 키 (세 서비스 같은 값, 32바이트 이상) |
 | `JWT_ISSUER` | | 토큰 발급자 (기본 `hospital-reservation`) |
 | `DB_SSL_CA` | | DB TLS CA 인증서 경로 (없으면 암호화만, 검증 안 함) |
